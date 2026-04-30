@@ -73,12 +73,25 @@ app.route(prefix + '/assignments/:id')
   .delete(assignment.deleteAssignment);
 
 
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
 // On démarre le serveur
 app.listen(port, () => {
   console.log('Serveur démarré sur le port : ' + port);
 });
 
-app.use('/images', express.static(path.join(__dirname, 'images')));
+app.get('/api', (req, res) => {
+  res.json({
+    message: "API Assignments OK 🚀",
+    endpoints: {
+      assignments: "/api/assignments",
+      login: "/api/users/login",
+      register: "/api/users/register"
+    }
+  });
+});
+
+
 
 module.exports = app;
 

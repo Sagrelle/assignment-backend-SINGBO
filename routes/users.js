@@ -27,7 +27,7 @@ router.post('/login', async (req, res) => {
 
 
 // =====================
-// REGISTER 🔥 AJOUT ICI
+// REGISTER AJOUT ICI
 // =====================
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
@@ -65,6 +65,12 @@ router.post('/register', async (req, res) => {
       error
     });
   }
+});
+
+// 🔥 GET ALL USERS (pour test prof)
+router.get('/', async (req, res) => {
+  const users = await User.find();
+  res.json(users);
 });
 
 module.exports = router;
