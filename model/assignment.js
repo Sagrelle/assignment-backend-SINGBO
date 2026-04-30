@@ -4,9 +4,24 @@ var aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 let AssignmentSchema = Schema({
     id: Number,
-    dateDeRendu: Date,
+    dateDeRendu: String,
     nom: String,
-    rendu: Boolean
+    rendu: Boolean ,
+
+
+    matiere: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Matiere'
+    },
+
+    note: {
+        type: Number,
+        min: 0,
+        max: 20
+    },
+
+    remarques: String
+
 });
 
 // Pour la pagination, on ajoute le plugin mongoose-aggregate-paginate-v2 

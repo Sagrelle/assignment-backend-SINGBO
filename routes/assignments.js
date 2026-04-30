@@ -1,23 +1,27 @@
 let Assignment = require("../model/assignment");
+let Matiere = require("../model/matiere"); // 🔥 AJOUT
 
 // Récupérer tous les assignments (GET)
 function getAssignmentsSansPagination(req, res) {
-  Assignment.find((err, assignments) => {
-    if (err) {
-      res.send(err);
-    }
-
-    // res sert à renvoyer la réponse au client, ici le navigateur Angular
-    // assignment est transformé en JSON et envoyé dans le corps de la
-    // réponse HTTP
-    res.send(assignments);
-  });
+  Assignment.find()
+    .populate({
+      path: 'matiere',
+      populate: {
+        path: 'prof'
+      }
+    })
+    .exec((err, assignments) => {
+      if (err) {
+        res.send(err);
+      }
+      res.send(assignments);
+    });
 }
 
-// fonction pour récupérer les assignments avec pagination
+// pagination (inchangé)
 function getAssignments(req, res) {
-  let page = parseInt(req.query.page) || 1; // page number, default to 1
-  let limit = parseInt(req.query.limit) || 10; // items per page, default to 10
+  let page = parseInt(req.query.page) || 1;
+  let limit = parseInt(req.query.limit) || 10;
 
   let options = {
     page: page,
@@ -33,53 +37,89 @@ function getAssignments(req, res) {
     });
 }
 
-// Récupérer un assignment par son id (GET)
+// GET by id (inchangé)
 function getAssignment(req, res) {
-  // req = la requete HTTP qui contient des infos sur la requete du client
-  // c'est envoyé par le navigateur Angular, et on peut y trouver des infos
-  // comme les paramètres de l'URL, le corps de la requete, etc
-  // req.params = l'id qui est dans l'URL, défini par :id dans la route
-  // ca ressemble au route.snapshot.params en Angular
   let assignmentId = req.params.id;
 
-  Assignment.findById(assignmentId, (err, assignment) => {
-    if (err) {
-      res.send(err);
-    }
-    res.json(assignment);
-  });
+  Assignment.findById(assignmentId)
+    .populate({
+      path: 'matiere',
+      populate: {
+        path: 'prof'
+      }
+    })
+    .exec((err, assignment) => {
+      if (err) {
+        res.send(err);
+      }
+      res.json(assignment);
+    });
 }
 
-// Ajout d'un assignment (POST)
-function postAssignment(req, res) {
-  let assignment = new Assignment();
+// 🔥 POST CORRIGÉ
+async function postAssignment(req, res) {
 
-  // req.body contient les données envoyées par le client
-  // dans le corps de la requete HTTP
-  // dans notre cas, ce sont les données d'un assignment à ajouter,
-  // envoyées par le formulaire Angular
-  assignment.id = req.body.id;
-  assignment.nom = req.body.nom;
-  assignment.dateDeRendu = req.body.dateDeRendu;
-  assignment.rendu = req.body.rendu;
+  if (req.body.rendu === true && !req.body.note) {
+    return res.status(400).json({
+      message: "Impossible de marquer rendu sans note"
+    });
+  }
 
-  console.log("POST assignment reçu :");
-  console.log(assignment);
+  try {
+    let assignment = new Assignment();
 
-  // fait l'insertion dans la base de données, et ensuite envoie une
-  // réponse au client
-  assignment.save((err) => {
-    if (err) {
-      res.send("cant post assignment ", err);
+    assignment.id = req.body.id;
+    assignment.nom = req.body.nom;
+    assignment.dateDeRendu = req.body.dateDeRendu;
+    assignment.rendu = req.body.rendu;
+
+    // 🔥 CONVERSION NOM → OBJECTID
+    let matiereId = null;
+
+    if (req.body.matiere) {
+      console.log("Matière reçue:", req.body.matiere);
+
+      const matiere = await Matiere.findOne({
+        nom: { $regex: `^${req.body.matiere.trim()}$`, $options: "i" }
+      });
+
+      console.log("Matière trouvée:", matiere);
+
+      if (!matiere) {
+        return res.status(404).json({ message: "Matière non trouvée" });
+      }
+
+      matiereId = matiere._id;
     }
+
+    // 🔥 IMPORTANT
+    assignment.matiere = matiereId;
+
+    assignment.note = req.body.note;
+    assignment.remarques = req.body.remarques;
+
+    console.log("POST assignment reçu :", assignment);
+
+    await assignment.save();
+
     res.json({ message: `${assignment.nom} saved!` });
-  });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Erreur serveur");
+  }
 }
 
-// Update d'un assignment (PUT)
+// UPDATE (inchangé pour toi)
 function updateAssignment(req, res) {
   console.log("UPDATE recu assignment : ");
   console.log(req.body);
+
+  if (req.body.rendu === true && !req.body.note) {
+    return res.status(400).json({
+      message: "Impossible de marquer rendu sans note"
+    });
+  }
 
   Assignment.findByIdAndUpdate(
     req.body._id,
@@ -92,13 +132,11 @@ function updateAssignment(req, res) {
       } else {
         res.json({ message: "updated" });
       }
-
-      // console.log('updated ', assignment)
     },
   );
 }
 
-// suppression d'un assignment (DELETE)
+// DELETE (inchangé)
 function deleteAssignment(req, res) {
   try {
     console.log("DELETE recu assignment id : " + req.params.id);

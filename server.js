@@ -2,6 +2,8 @@ let express = require('express');
 let app = express();
 let bodyParser = require('body-parser');
 let assignment = require('./routes/assignments');
+const userRoutes = require('./routes/users'); 
+const path = require('path');
 
 // Pour externaliser la configuration (URI de connexion à la base, 
 // port du serveur, etc), et on peut aussi utiliser des variables 
@@ -56,6 +58,7 @@ app.use(function (req, res, next) {
 // ce type de formulaire, alors que multer le gère très bien.
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
+app.use('/api/users', userRoutes);
 
 // les routes
 const prefix = '/api';  // /api/assignments GET POST PUT
@@ -75,6 +78,7 @@ app.listen(port, () => {
   console.log('Serveur démarré sur le port : ' + port);
 });
 
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 module.exports = app;
 
