@@ -67,7 +67,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-console.log("BODY REÇU :", req.body);
 
 // 🔥 GET ALL USERS (pour test prof)
 router.get('/', async (req, res) => {
